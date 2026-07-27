@@ -1,0 +1,20 @@
+[
+  {
+    "name": "Link Account",
+    "steps": [
+      {
+        "expect": [
+          {
+            "method": "sendMessage",
+            "payload": {
+              "text": "Initiate account linking flow with broker selection and API credential entry"
+            }
+          }
+        ],
+        "send": {
+          "callback": "account:link"
+        }
+      }
+    ]
+  }
+]
