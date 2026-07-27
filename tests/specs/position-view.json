@@ -7,7 +7,7 @@
           {
             "method": "sendMessage",
             "payload": {
-              "text": "Display current open positions with P\u0026L details"
+              "text": "No account is linked yet — link one to view positions."
             }
           }
         ],

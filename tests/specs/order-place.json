@@ -7,7 +7,7 @@
           {
             "method": "sendMessage",
             "payload": {
-              "text": "Select order type and parameters with confirmation for live accounts"
+              "text": "Link an account first, then you can place an order."
             }
           }
         ],

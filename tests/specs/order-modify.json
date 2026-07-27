@@ -7,7 +7,7 @@
           {
             "method": "sendMessage",
             "payload": {
-              "text": "Choose existing order to modify with confirmation for live accounts"
+              "text": "No active orders yet — place one when you're ready."
             }
           }
         ],

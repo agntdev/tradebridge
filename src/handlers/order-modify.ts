@@ -1,17 +1,16 @@
 import { Composer } from "grammy";
-
-// SCAFFOLD — generated from the bot blueprint BEFORE the agent runs.
-// Keep a LIVE registration (.command / .callbackQuery / …) so this feature is
-// never an empty stub. Replace the reply body with real logic + copy; if you
-// change the user-facing text, update tests/specs to match EXACTLY.
-// Do NOT rewrite src/bot.ts — buildBot() already auto-loads this module.
-// Menu: wire this into /start via registerMainMenuItem({ label: "Modify Order", data: "order:modify" }) if the toolkit exposes it.
-
-const composer = new Composer();
-
+import type { Ctx } from "../bot.js";
+import { inlineButton, inlineKeyboard, registerMainMenuItem } from "../toolkit/index.js";
+import { activeOrders, positive, state, account, cancelBrokerOrder, executeOrder } from "../trading.js";
+registerMainMenuItem({ label: "Modify order", data: "order:modify", order: 30 });
+const composer = new Composer<Ctx>();
 composer.callbackQuery("order:modify", async (ctx) => {
   await ctx.answerCallbackQuery();
-  await ctx.reply("Choose existing order to modify with confirmation for live accounts");
+  const orders = activeOrders(ctx); if (!orders.length) { await ctx.reply("No active orders yet — place one when you're ready."); return; }
+  await ctx.reply("Choose an active order to modify.", { reply_markup: inlineKeyboard([...orders.slice(0, 6).map((o) => [inlineButton(`${o.symbol} ${o.quantity}`, `modify:${o.id}`)]), [inlineButton("Back", "menu:main")]]) });
 });
+composer.callbackQuery(/^modify:(order-\d+)$/, async (ctx) => { await ctx.answerCallbackQuery(); if (!activeOrders(ctx).some((o) => o.id === ctx.match[1])) { await ctx.editMessageText("That order is no longer active."); return; } ctx.session.flow = { kind: "modify-quantity", orderId: ctx.match[1] }; await ctx.reply("Enter the new quantity.", { reply_markup: { force_reply: true, input_field_placeholder: "0.01" } }); });
+composer.on("message:text", async (ctx, next) => { const f = ctx.session.flow; if (!f || (f.kind !== "modify-quantity" && f.kind !== "modify-price")) return next(); const n = positive(ctx.message.text.trim()); if (!n) { await ctx.reply("Enter a value greater than zero."); return; } if (f.kind === "modify-quantity") { ctx.session.flow = { kind: "modify-price", orderId: f.orderId, quantity: n }; await ctx.reply("Enter the new price.", { reply_markup: { force_reply: true, input_field_placeholder: "65000" } }); return; } const o = state(ctx).orders.find((x) => x.id === f.orderId); ctx.session.flow = undefined; if (!o) { await ctx.reply("That order is no longer active."); return; } ctx.session.pendingModify = { id: o.id, quantity: f.quantity, price: n }; await ctx.reply(`Review the change: ${o.symbol} to ${f.quantity} at ${n}.`, { reply_markup: inlineKeyboard([[inlineButton("Confirm change", "modify:confirm"), inlineButton("Discard", "modify:discard")]]) }); });
+composer.callbackQuery(/^modify:(confirm|discard)$/, async (ctx) => { await ctx.answerCallbackQuery(); const p = ctx.session.pendingModify; delete ctx.session.pendingModify; if (!p) { await ctx.editMessageText("That change is no longer ready."); return; } if (ctx.match[1] === "discard") { await ctx.editMessageText("Change discarded."); return; } const o = state(ctx).orders.find((x) => x.id === p.id); const a = account(ctx); if (!o || !a) { await ctx.editMessageText("That order is no longer active."); return; } try { await cancelBrokerOrder(ctx, a, o); const replacement = { ...o, id: `${o.id}-r`, quantity: p.quantity, price: p.price, type: "limit" as const, status: "open" as const }; await executeOrder(ctx, a, replacement); o.status = "cancelled"; state(ctx).orders.push(replacement); await ctx.editMessageText("Order replaced with the confirmed changes."); } catch { await ctx.editMessageText("The broker couldn't change that order. Check its current status and try again."); } });
 
 export default composer;
