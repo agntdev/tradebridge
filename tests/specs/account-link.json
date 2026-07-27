@@ -7,7 +7,7 @@
           {
             "method": "sendMessage",
             "payload": {
-              "text": "Initiate account linking flow with broker selection and API credential entry"
+              "text": "Enter the email address for trade confirmations."
             }
           }
         ],

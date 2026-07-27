@@ -6,7 +6,12 @@ import type { StorageAdapter } from "grammy";
 // bot grows. Durable domain data must NOT live here — use the toolkit's
 // persistent storage (see AGENTS.md).
 export interface Session {
-  // example: step?: "awaiting_amount";
+  /** Ephemeral, short-lived input currently being collected. */
+  flow?: import("./trading.js").Flow;
+  /** Indexed domain records. Production session adapters are Redis/DO-backed. */
+  trade?: import("./trading.js").TradeState;
+  pendingOrder?: import("./trading.js").Order;
+  pendingModify?: { id: string; quantity: number; price: number };
 }
 
 export type Ctx = BotContext<Session>;

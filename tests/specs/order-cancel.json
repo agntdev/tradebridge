@@ -7,7 +7,7 @@
           {
             "method": "sendMessage",
             "payload": {
-              "text": "Select order to cancel with confirmation for live accounts"
+              "text": "No active orders to cancel."
             }
           }
         ],
