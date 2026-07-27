@@ -1,0 +1,20 @@
+[
+  {
+    "name": "Manage Notifications",
+    "steps": [
+      {
+        "expect": [
+          {
+            "method": "sendMessage",
+            "payload": {
+              "text": "Configure alert preferences for trades and account activity"
+            }
+          }
+        ],
+        "send": {
+          "callback": "notification:manage"
+        }
+      }
+    ]
+  }
+]
